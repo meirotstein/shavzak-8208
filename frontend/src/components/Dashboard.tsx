@@ -1,6 +1,6 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 interface POCData {
   helloword: string;
@@ -14,9 +14,7 @@ const Dashboard: React.FC = () => {
   const [editValue, setEditValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  
-
-  const fetchPOCData = async () => {
+  const fetchPOCData = useCallback(async () => {
     try {
       setLoading(true);
       const token = await currentUser?.getIdToken();
@@ -32,7 +30,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {
