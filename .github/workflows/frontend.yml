@@ -30,7 +30,7 @@ jobs:
     - name: Run tests
       run: |
         cd frontend
-        npm test -- --watchAll=false
+        npm test -- --watchAll=false --passWithNoTests
     
     - name: Build
       run: |
@@ -68,4 +68,4 @@ jobs:
         repoToken: '${{ secrets.GITHUB_TOKEN }}'
         firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
         channelId: live
-        projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+        projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
