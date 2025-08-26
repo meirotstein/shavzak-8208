@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import { db } from '../firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 interface POCData {
   helloword: string;
@@ -17,20 +18,23 @@ const Dashboard: React.FC = () => {
   const fetchPOCData = useCallback(async () => {
     try {
       setLoading(true);
-      const token = await currentUser?.getIdToken();
-      const response = await axios.get('/api/poc', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setPocData(response.data.data);
-      setEditValue(response.data.data.helloword);
+      const docRef = doc(db, 'poc', 'pocid');
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data() as POCData;
+        setPocData(data);
+        setEditValue(data.helloword);
+      } else {
+        setError('Document not found');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch data');
+      setError('Failed to fetch data from Firestore');
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
@@ -41,20 +45,17 @@ const Dashboard: React.FC = () => {
   const handleUpdate = async () => {
     try {
       setLoading(true);
-      const token = await currentUser?.getIdToken();
-      await axios.put('/api/poc', 
-        { helloword: editValue },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const docRef = doc(db, 'poc', 'pocid');
+      await updateDoc(docRef, {
+        helloword: editValue
+      });
+      
       setPocData({ helloword: editValue });
       setEditing(false);
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update data');
+      setError('Failed to update data in Firestore');
+      console.error('Error updating data:', err);
     } finally {
       setLoading(false);
     }
