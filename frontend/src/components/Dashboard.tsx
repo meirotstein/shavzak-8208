@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 interface POCData {
   helloword: string;
@@ -15,32 +15,36 @@ const Dashboard: React.FC = () => {
   const [editValue, setEditValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPOCData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const docRef = doc(db, 'poc', 'pocid');
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data() as POCData;
-        setPocData(data);
-        setEditValue(data.helloword);
-      } else {
-        setError('Document not found');
-      }
-    } catch (err: any) {
-      setError('Failed to fetch data from Firestore');
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (currentUser) {
-      fetchPOCData();
-    }
-  }, [currentUser, fetchPOCData]);
+    if (!currentUser) return;
+
+    setLoading(true);
+    
+    // Set up real-time listener for the poc document
+    const docRef = doc(db, 'poc', 'pocid');
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as POCData;
+          setPocData(data);
+          setEditValue(data.helloword);
+          setError(null);
+        } else {
+          setError('Document not found');
+        }
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error listening to document:', err);
+        setError('Failed to listen to data changes');
+        setLoading(false);
+      }
+    );
+
+    // Cleanup function to unsubscribe when component unmounts
+    return () => unsubscribe();
+  }, [currentUser]);
 
   const handleUpdate = async () => {
     try {
@@ -50,7 +54,8 @@ const Dashboard: React.FC = () => {
         helloword: editValue
       });
       
-      setPocData({ helloword: editValue });
+      // Note: We don't need to manually update state here
+      // The real-time listener will automatically update the UI
       setEditing(false);
       setError(null);
     } catch (err: any) {
@@ -113,9 +118,17 @@ const Dashboard: React.FC = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                POC Data from Firestore
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  POC Data from Firestore
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600">Live</span>
+                  </div>
+                </div>
+              </div>
               
               {error && (
                 <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -179,6 +192,7 @@ const Dashboard: React.FC = () => {
                   <p><strong>Collection:</strong> poc</p>
                   <p><strong>Document ID:</strong> pocid</p>
                   <p><strong>Last Updated:</strong> {new Date().toLocaleString()}</p>
+                  <p><strong>Status:</strong> <span className="text-green-600">Real-time listening</span></p>
                 </div>
               </div>
             </div>
