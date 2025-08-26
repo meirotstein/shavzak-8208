@@ -20,6 +20,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Configure npm
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set @firebase:registry https://registry.npmjs.org/
       
       - name: Install dependencies
         run: |
@@ -37,3 +43,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
           entryPoint: '.'
+          firebaseToolsVersion: '13.0.0'
