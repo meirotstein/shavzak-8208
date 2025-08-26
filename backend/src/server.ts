@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import * as fs from 'fs';
@@ -14,13 +14,13 @@ import * as path from 'path';
 dotenv.config();
 
 // Initialize Firebase Admin
-let serviceAccount: any;
+let serviceAccount: ServiceAccount;
 
 try {
   // Read Firebase service account from JSON file
   const serviceAccountPath = process.env.FIREBASE_PRIVATE_KEY_PATH || './firebase-service-account.json';
   const serviceAccountFile = fs.readFileSync(path.resolve(serviceAccountPath), 'utf8');
-  serviceAccount = JSON.parse(serviceAccountFile);
+  serviceAccount = JSON.parse(serviceAccountFile) as ServiceAccount;
 } catch (error) {
   console.error('Error reading Firebase service account file:', error);
   console.error('Please ensure the Firebase service account JSON file exists and is accessible');
