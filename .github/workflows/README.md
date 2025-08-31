@@ -52,7 +52,7 @@ This directory contains automated CI/CD workflows for the project.
 
 #### **Firebase Functions Workflow:**
 ```
-Push to functions/ → Test & Build → Deploy (if main branch)
+Push to functions/ → Test & Build → Deploy using service account (if main branch)
 ```
 
 #### **Frontend Workflow:**

@@ -69,10 +69,21 @@ jobs:
         npm run build
     
     - name: Setup Firebase CLI
-      uses: FirebaseExtended/action-hosting-deploy@v0
-      with:
-        repoToken: '${{ secrets.GITHUB_TOKEN }}'
-        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-        projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
-        entryPoint: '.'
-        deployOnly: 'functions'
+      run: npm install -g firebase-tools
+    
+    - name: Deploy to Firebase Functions
+      run: |
+        # Create temporary service account file
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | base64 -d > service-account.json
+        
+        # Set environment variable for Firebase CLI
+        export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
+        
+        # Deploy only functions
+        firebase deploy --only functions --project '${{ secrets.FIREBASE_PROJECT_ID }}'
+        
+        # Clean up
+        rm -f service-account.json
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
