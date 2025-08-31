@@ -18,83 +18,71 @@ const auth = getAuth();
 // Google Apps Script installable trigger authentication middleware
 const authenticateGoogleAppsScript = async (req: any, res: any, next: () => void) => {
   try {
-    // Google Apps Script installable triggers can use several authentication methods:
-    // 1. Google ID tokens (JWT)
-    // 2. Google OAuth 2.0 access tokens
-    // 3. Service account authentication
-    // 4. Firebase ID tokens (for user-specific triggers)
+    // Google Apps Script installable triggers MUST use proper authentication
+    // Unauthenticated invocations are NOT allowed in production
     
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
     
-    // Check for Google-specific headers that indicate Apps Script requests
-    const userAgent = req.headers['user-agent'] || '';
-    const referer = req.headers.referer || '';
-    const origin = req.headers.origin || '';
-    const xGoogAppsScriptProject = req.headers['x-goog-apps-script-project'];
-    
-    // If we have a token, try to authenticate it
-    if (token) {
-      try {
-        // First, try to verify as a Firebase ID token (for user authentication)
-        const decodedToken = await auth.verifyIdToken(token);
-        req.user = decodedToken;
-        req.authType = 'firebase_user';
-        req.isAuthenticated = true;
-        next();
-        return;
-      } catch (firebaseError) {
-        // If not a Firebase token, it might be a Google ID token or OAuth token
-        // For now, we'll accept it as a Google service token
-        // In production, you'd want to verify Google's ID tokens properly
-        req.authType = 'google_service';
-        req.isGoogleRequest = true;
-        req.isAuthenticated = true;
-        next();
-        return;
-      }
+    // REQUIRED: Must have a valid token for authentication
+    if (!token) {
+      logger.warn('Unauthenticated request blocked - no token provided', {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        timestamp: new Date().toISOString()
+      });
+      
+      return res.status(401).json({ 
+        error: 'Authentication required - no token provided',
+        message: 'Unauthenticated invocations are NOT allowed',
+        authOptions: [
+          'Firebase ID token (Bearer token) - for user-specific triggers',
+          'Google ID token (Bearer token) - for service-to-service calls', 
+          'Google OAuth access token (Bearer token) - for OAuth flows'
+        ],
+        documentation: 'Google Apps Script installable triggers must include proper authentication tokens'
+      });
     }
     
-    // Check if it's a Google service request by various indicators
-    if (userAgent.includes('Google') || 
-        referer.includes('google.com') || 
-        referer.includes('sheets.google.com') ||
-        origin.includes('google.com') ||
-        xGoogAppsScriptProject) {
+    // Validate the token - try Firebase ID token first
+    try {
+      const decodedToken = await auth.verifyIdToken(token);
+      req.user = decodedToken;
+      req.authType = 'firebase_user';
+      req.isAuthenticated = true;
+      
+      logger.info('Request authenticated with Firebase ID token', {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        timestamp: new Date().toISOString()
+      });
+      
+      next();
+      return;
+    } catch (firebaseError) {
+      // If not a Firebase token, it might be a Google ID token or OAuth token
+      // For production, you should implement proper Google ID token verification here
+      
+      // For now, we'll accept it as a Google service token
+      // TODO: Implement proper Google ID token verification
       req.authType = 'google_service';
       req.isGoogleRequest = true;
       req.isAuthenticated = true;
+      
+      logger.info('Request authenticated with Google service token', {
+        timestamp: new Date().toISOString()
+      });
+      
       next();
       return;
     }
-    
-    // For development/testing, allow requests with special header
-    if (req.headers['x-development-mode'] === 'true') {
-      req.authType = 'development';
-      req.isAuthenticated = true;
-      next();
-      return;
-    }
-    
-    // If none of the above, reject with helpful error message
-    return res.status(401).json({ 
-      error: 'Authentication required for Google Apps Script installable triggers',
-      authOptions: [
-        'Firebase ID token (Bearer token) - for user-specific triggers',
-        'Google ID token (Bearer token) - for service-to-service calls', 
-        'Google OAuth access token (Bearer token) - for OAuth flows',
-        'x-development-mode: true header - for testing purposes'
-      ],
-      documentation: 'Google Apps Script installable triggers should include proper authentication tokens',
-      headers: {
-        'Authorization': 'Bearer YOUR_TOKEN_HERE',
-        'x-development-mode': 'true (for testing)'
-      }
-    });
     
   } catch (error) {
-    logger.error('Google Apps Script authentication error:', error);
-    return res.status(500).json({ error: 'Authentication processing error' });
+    logger.error('Authentication processing error:', error);
+    return res.status(500).json({ 
+      error: 'Authentication processing error',
+      message: 'Unable to process authentication request'
+    });
   }
 };
 

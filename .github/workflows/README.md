@@ -33,20 +33,20 @@ This directory contains automated CI/CD workflows for the project.
    - Add these required secrets:
 
    ```
-   FIREBASE_TOKEN: Your Firebase CI token
+   FIREBASE_SERVICE_ACCOUNT: Your Firebase service account JSON (base64 encoded)
    FIREBASE_PROJECT_ID: Your Firebase project ID
    ```
 
-2. **Get Firebase CI Token**:
+2. **Get Firebase Service Account Key**:
    ```bash
-   # Login to Firebase and generate a CI token
-   firebase login:ci
+   # Download from Firebase Console: Project Settings → Service Accounts
+   # Generate new private key → Download JSON file
    
-   # This will open a browser window for authentication
-   # After successful login, copy the token
+   # Encode for GitHub Secrets
+   base64 -i firebase-service-account.json | tr -d '\n'
    ```
 
-3. **Copy the token** and paste it as the `FIREBASE_TOKEN` secret
+3. **Copy the base64 output** and paste it as the `FIREBASE_SERVICE_ACCOUNT` secret
 
 ### How It Works
 
@@ -109,7 +109,7 @@ Add these to your README.md for status visibility:
 2. **Deployment failures:**
    - Verify GitHub Secrets are set correctly
    - Check Firebase project ID matches
-   - Ensure Firebase token has proper permissions
+   - Ensure service account has proper permissions
 
 3. **Build failures:**
    - Check Node.js version compatibility

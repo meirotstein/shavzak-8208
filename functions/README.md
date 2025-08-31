@@ -170,12 +170,16 @@ The project includes GitHub Actions that automatically deploy when you push to t
 3. **Create PR** → Validation and testing
 
 **Required GitHub Secrets:**
-- `FIREBASE_TOKEN`: Your Firebase CI token
+- `FIREBASE_SERVICE_ACCOUNT`: Your Firebase service account JSON (base64 encoded)
 - `FIREBASE_PROJECT_ID`: Your Firebase project ID
 
-**Get Firebase CI Token:**
+**Get Firebase Service Account:**
 ```bash
-firebase login:ci
+# Download from Firebase Console: Project Settings → Service Accounts
+# Generate new private key → Download JSON file
+
+# Encode for GitHub Secrets
+base64 -i firebase-service-account.json | tr -d '\n'
 ```
 
 ### Troubleshooting
