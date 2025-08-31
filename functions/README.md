@@ -196,3 +196,4 @@ base64 -i firebase-service-account.json | tr -d '\n'
 - `tsconfig.json` - TypeScript configuration
 - `.eslintrc.js` - ESLint rules
 - `.gitignore` - Git ignore patterns
+- foo
