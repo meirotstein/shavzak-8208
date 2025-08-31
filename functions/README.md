@@ -139,12 +139,44 @@ The function is configured with:
 
 ### Next Steps
 
-1. **Deploy the function**: `npm run deploy`
+1. **Deploy the function**: `npm run deploy` or push to main branch for automatic deployment
 2. **Set up Google Apps Script** with installable triggers
-3. **Configure webhook URL** to point to your deployed function
+3. **Configure the webhook URL** to point to your deployed function
 4. **Implement proper Google ID token verification** (currently simplified)
 5. **Add rate limiting** and additional security measures
 6. **Set up monitoring** and alerting
+
+### Testing
+
+- **Backend**: http://localhost:3001
+- **Frontend**: http://localhost:3000
+- **API Endpoints**: http://localhost:3001/api
+- **Health Check**: http://localhost:3001/health
+
+### Deployment
+
+#### Manual Deployment
+```bash
+cd functions
+npm run build
+npm run deploy
+```
+
+#### Automated Deployment (Recommended)
+The project includes GitHub Actions that automatically deploy when you push to the `main` branch:
+
+1. **Push to `main`** → Automatic deployment
+2. **Push to `develop`** → Testing only (no deployment)
+3. **Create PR** → Validation and testing
+
+**Required GitHub Secrets:**
+- `FIREBASE_TOKEN`: Your Firebase CI token
+- `FIREBASE_PROJECT_ID`: Your Firebase project ID
+
+**Get Firebase CI Token:**
+```bash
+firebase login:ci
+```
 
 ### Troubleshooting
 
